@@ -30,7 +30,17 @@ cmake \
 
 ## About `SCRIPT_PATH` file contents
 
-Clones git repo and creates conan package:
+First, create directory where `git` repos must be cloned:
+
+```cmake
+if(EXISTS "${CURRENT_SCRIPT_DIR}/.tmp")
+  cmake_remove_directory("${CURRENT_SCRIPT_DIR}/.tmp")
+endif()
+
+cmake_make_dir("${CURRENT_SCRIPT_DIR}/.tmp")
+```
+
+Example below clones git repo and creates conan package:
 
 ```cmake
 if(NOT EXISTS "${CURRENT_SCRIPT_DIR}/.tmp/flex_support_headers")
@@ -46,7 +56,7 @@ conan_build_target_if(
   "")
 ```
 
-Clones git repo branch "testing/1.90" and creates conan package if `ENABLE_CPPCHECK` is `TRUE`:
+Example below clones git repo branch "testing/1.90" and creates conan package if `ENABLE_CPPCHECK` is `TRUE`:
 
 ```cmake
 set(ENABLE_CPPCHECK TRUE CACHE BOOL "ENABLE_CPPCHECK")
