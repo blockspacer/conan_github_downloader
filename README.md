@@ -1,7 +1,6 @@
 # About
 
-CMake script that downloads and builds conan packages from github.
-
+CMake script that downloads and builds conan packages from github using provided options.
 
 ## How it works
 
@@ -14,6 +13,19 @@ cmake \
   -DSCRIPT_PATH="$PWD/my_script.cmake"
   -DEXTRA_CONAN_OPTS="--profile;default" \
   -P tools/conan_github_downloader.cmake
+```
+
+You can provide multiple conan options:
+
+```bash
+cmake \
+  -DSCRIPT_PATH="$PWD/get_conan_dependencies.cmake"\
+  -DEXTRA_CONAN_OPTS="--profile;clang\
+;-s;build_type=Debug\
+;-s;cling_conan:build_type=Release\
+;-s;llvm_tools:build_type=Release\
+;--build;missing" \
+  -P ~/conan_github_downloader/conan_github_downloader.cmake
 ```
 
 ## About `SCRIPT_PATH` file contents
@@ -51,3 +63,11 @@ conan_build_target_if(
   ENABLE_CPPCHECK
   "")
 ```
+
+## Motivation
+
+Events similar to `Bintray Sunset` may happen any day, see https://blog.conan.io/2021/03/31/Bintray-sunset-timeline.html
+
+## Alternatives
+
+See https://stackoverflow.com/q/62261869
