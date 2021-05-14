@@ -2,6 +2,22 @@
 
 CMake script that downloads and builds conan packages from github using provided options.
 
+## Where to store `SCRIPT_PATH` file?
+
+Best practices is to create `get_conan_dependencies.cmake` file near `conanfile.py` (or near `conanfile.txt`).
+
+`get_conan_dependencies.cmake` file must contain cmake code that creates all dependencies i.e. it does not auto-detect dependencies of dependencies.
+
+That will allow to continue working even if `ConanCenter` server goes down.
+
+## Why build from sources
+
+Some people do not like to install binaries.
+
+If you think that it is beneficial to build software from sources - you may prefer `conan_github_downloader`
+
+[Gentoo answer why build from sources](https://wiki.gentoo.org/wiki/Why_build_from_sources)
+
 ## How it works
 
 `conan_github_downloader.cmake` includes script provided by `SCRIPT_PATH`.
