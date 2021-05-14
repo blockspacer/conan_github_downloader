@@ -10,7 +10,7 @@ Use `cmake -P` to run `conan_github_downloader.cmake`:
 
 ```bash
 cmake \
-  -DSCRIPT_PATH="$PWD/my_script.cmake"
+  -DSCRIPT_PATH="$PWD/my_script.cmake" \
   -DEXTRA_CONAN_OPTS="--profile;default" \
   -P tools/conan_github_downloader.cmake
 ```
@@ -38,6 +38,32 @@ if(EXISTS "${CURRENT_SCRIPT_DIR}/.tmp")
 endif()
 
 cmake_make_dir("${CURRENT_SCRIPT_DIR}/.tmp")
+```
+
+Now you can run commands that can clone git repo, remove old conan package and create new package.
+
+Example with best practices:
+
+```cmake
+set(ENABLE_CPPCHECK TRUE CACHE BOOL "ENABLE_CPPCHECK")
+if(ENABLE_CPPCHECK
+  AND NOT EXISTS "${CURRENT_SCRIPT_DIR}/.tmp/conan-cppcheck_installer")
+  git_clone("${CURRENT_SCRIPT_DIR}/.tmp/conan-cppcheck_installer"
+      "https://github.com/bincrafters/conan-cppcheck_installer.git"
+      "-b;testing/1.90")
+endif()
+#
+set(CLEAN_CPPCHECK FALSE CACHE BOOL "CLEAN_CPPCHECK")
+if(ENABLE_CPPCHECK AND CLEAN_CPPCHECK)
+  conan_remove_target(conan-cppcheck_installer)
+endif()
+#
+conan_build_target_if(
+  "conan-cppcheck_installer" # target to clean
+  "conan/stable"
+  "${CURRENT_SCRIPT_DIR}/.tmp/conan-cppcheck_installer" # target to build
+  ENABLE_CPPCHECK
+  "")
 ```
 
 Example below clones git repo and creates conan package:
@@ -74,10 +100,54 @@ conan_build_target_if(
   "")
 ```
 
+Example below removes conan package if `conan search` succeeded:
+
+```cmake
+# Runs `conan search` command i.e.
+# conan search cppcheck_installer/master@conan/stable \
+#   -q "compiler=clang OR compiler=gcc"
+conan_search(
+  TARGET "conan-cppcheck_installer/master@conan/stable"
+  RESULT_VAR_NAME cppcheck_installer_EXISTS
+  VERBOSE TRUE
+  QUERY -q "compiler=clang OR compiler=gcc"
+)
+if(cppcheck_installer_EXISTS)
+  conan_remove_target(conan-cppcheck_installer)
+endif()
+```
+
 ## Motivation
 
 Events similar to `Bintray Sunset` may happen any day, see https://blog.conan.io/2021/03/31/Bintray-sunset-timeline.html
 
+## About `CLEAN_BUILD` option
+
+If can pass `-DCLEAN_BUILD=ON` than all conan packages from `SCRIPT_PATH` will be re-created (i.e. will run `conan remove` before `conan create`)
+
+```bash
+cmake \
+  -DSCRIPT_PATH="$PWD/integration_tests/integration_test.cmake" \
+  -DEXTRA_CONAN_OPTS="--profile;clang\
+;-s;build_type=Debug\
+;--build;missing" \
+  -DCLEAN_BUILD=ON \
+  -P conan_github_downloader.cmake
+```
+
 ## Alternatives
 
 See https://stackoverflow.com/q/62261869
+
+## (for contibutors) Integration tests
+
+Run tests before pull requests:
+
+```bash
+cmake \
+  -DSCRIPT_PATH="$PWD/integration_tests/integration_test.cmake" \
+  -DEXTRA_CONAN_OPTS="--profile;clang\
+;-s;build_type=Debug\
+;--build;missing" \
+  -P conan_github_downloader.cmake
+```

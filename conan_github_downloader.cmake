@@ -24,7 +24,7 @@
 #
 cmake_minimum_required(VERSION 3.5)
 
-option(CLEAN_BUILD "CLEAN_BUILD" ON)
+option(CLEAN_BUILD "CLEAN_BUILD" OFF)
 if(CLEAN_BUILD)
   message(WARNING "(conan_github_downloader)
     clean rebuild of all conan deps may take a lot of time.
@@ -386,6 +386,74 @@ macro(conan_build_target_if TARGET_NAME TARGET_CHANNEL TARGET_PATH OPTION_NAME E
     conan_create_target(${TARGET_PATH} ${TARGET_CHANNEL} "${EXTRA_TARGET_OPTS}")
   endif(${OPTION_NAME})
 endmacro(conan_build_target_if)
+
+# Runs `conan search` command i.e.
+# conan search chromium_base/master@conan/stable \
+#   -q "compiler=clang OR compiler=gcc"
+#
+# USAGE
+#
+# conan_search(
+#   TARGET "chromium_base/master@conan/stable"
+#   RESULT_VAR_NAME chromium_base_EXISTS
+#   VERBOSE TRUE
+#   QUERY -q "compiler=clang OR compiler=gcc"
+# )
+# if(NOT chromium_base_EXISTS)
+#   conan_remove_target(chromium_base)
+# endif()
+function(conan_search)
+  set(oneValueArgs TARGET RESULT_VAR_NAME VERBOSE)
+  set(multiValueArgs QUERY)
+  #
+  cmake_parse_arguments(
+    ARGUMENTS # prefix of output variables
+    "${options}" # list of names of the boolean arguments (only defined ones will be true)
+    "${oneValueArgs}" # list of names of mono-valued arguments
+    "${multiValueArgs}" # list of names of multi-valued arguments (output variables are lists)
+    ${ARGN} # arguments of the function to parse, here we take the all original ones
+  )
+  #
+  set(VERBOSE ${ARGUMENTS_VERBOSE})
+  #
+  set(TARGET ${ARGUMENTS_TARGET})
+  #
+  set(QUERY ${ARGUMENTS_QUERY})
+  #
+  set(RESULT_VAR_NAME ${ARGUMENTS_RESULT_VAR_NAME})
+  #
+  set(UNPARSED_ARGS ${ARGUMENTS_UNPARSED_ARGUMENTS})
+  #
+  set(CONAN_SEARCH_ARGS "${TARGET}" "${QUERY}" ${UNPARSED_ARGS})
+  if(VERBOSE)
+    message( STATUS "running command " ${CONAN_PATH} "search" ${CONAN_SEARCH_ARGS})
+  endif()
+  set(ENV{CONAN_REVISIONS_ENABLED} 1)
+  set(ENV{CONAN_VERBOSE_TRACEBACK} 1)
+  set(ENV{CONAN_PRINT_RUN_COMMANDS} 1)
+  set(ENV{CONAN_LOGGING_LEVEL} 1)
+  set(ENV{GIT_SSL_NO_VERIFY} 1)
+  execute_process(
+    COMMAND
+      ${COLORED_OUTPUT_ENABLER}
+        ${CMAKE_COMMAND} "-E" "time"
+          "${CONAN_PATH}" "search" ${CONAN_SEARCH_ARGS}
+    WORKING_DIRECTORY .
+    TIMEOUT 7200 # sec
+    RESULT_VARIABLE retcode
+    ERROR_VARIABLE stderr
+    OUTPUT_QUIET
+    ERROR_QUIET
+    ${OUTPUT_VARS} # may create `stdout` variable
+  )
+  if(VERBOSE)
+    message( STATUS "result of command " ${CONAN_PATH} "search" ${CONAN_SEARCH_ARGS} " is: " ${retcode} ${stdout} ${stderr})
+  endif()
+  set(${RESULT_VAR_NAME} TRUE PARENT_SCOPE)
+  if(NOT "${retcode}" STREQUAL "0")
+    set(${RESULT_VAR_NAME} FALSE PARENT_SCOPE)
+  endif()
+endfunction(conan_search)
 
 # USAGE
 #
