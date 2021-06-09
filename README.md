@@ -2,6 +2,8 @@
 
 CMake script that downloads and builds conan packages from github using provided options.
 
+See as example [https://github.com/blockspacer/chromium_base_conan/blob/master/get_conan_dependencies.cmake](https://github.com/blockspacer/chromium_base_conan/blob/master/get_conan_dependencies.cmake)
+
 ## Where to store `SCRIPT_PATH` file?
 
 Best practices is to create `get_conan_dependencies.cmake` file near `conanfile.py` (or near `conanfile.txt`).
@@ -131,6 +133,18 @@ conan_search(
 if(cppcheck_installer_EXISTS)
   conan_remove_target(conan-cppcheck_installer)
 endif()
+```
+
+You can change conan setting and options, example (note `build_type` and `include_what_you_use`):
+
+```cmake
+conan_build_target_if(
+  "llvm_9" # target to clean
+  "conan/stable"
+  "${CURRENT_SCRIPT_DIR}/.tmp/llvm_9" # target to build
+  ENABLE_LLVM_9
+  ";-s;llvm_9:build_type=Release\
+;-o;llvm_9:include_what_you_use=True")
 ```
 
 ## Motivation
